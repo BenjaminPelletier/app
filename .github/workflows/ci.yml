@@ -1,14 +1,14 @@
-name: Test Empty Site
+name: Continuous integration
 
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
+  pull_request: # All
   workflow_dispatch:
 
 jobs:
   test-empty-site:
+    name: Test empty site
     runs-on: ubuntu-latest
 
     defaults:
@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Verify Docker installation
         run: docker --version
@@ -90,3 +90,26 @@ jobs:
             docker tag ropewiki/$image:latest ghcr.io/${REPO_OWNER_LOWER}/$image:github-master-latest
             docker push ghcr.io/${REPO_OWNER_LOWER}/$image:github-master-latest
           done
+
+  hygiene-tests:
+    name: Repository hygiene
+    # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#permissions
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+    - name: Job information
+      run: |
+        echo "Job information"
+        echo "Trigger: ${{ github.event_name }}"
+        echo "Host: ${{ runner.os }}"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: ${{ github.ref }}"
+        docker version
+        docker compose version
+    - name: Checkout
+      uses: actions/checkout@v6
+      with:
+        submodules: true
+    - name: Automated hygiene verification
+      run: ./repo_hygiene/repo_hygiene.sh
